@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { useId, useMemo, useState } from "react";
 import { CityMapLazy } from "@/components/map/CityMapLazy";
 import { CameraIcon, CheckIcon } from "@/components/ui/icons";
