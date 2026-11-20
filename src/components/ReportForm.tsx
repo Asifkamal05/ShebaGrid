@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { useId, useMemo, useState } from "react";
 import { CityMapLazy } from "@/components/map/CityMapLazy";
 import { CameraIcon, CheckIcon } from "@/components/ui/icons";
@@ -95,7 +96,7 @@ export function ReportForm() {
     );
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const next: Record<string, string> = {};
     if (!pin) next.pin = "Place a pin on the map, or choose an area.";
@@ -106,15 +107,47 @@ export function ReportForm() {
     setErrors(next);
     if (Object.keys(next).length > 0 || !pin || !category || !estimate) return;
 
-    setReceipt(
-      submitComplaint({
-        ...pin,
-        category,
-        description: description.trim(),
-        urgency: estimate.urgency,
-        photo: photo?.url,
-      }),
-    );
+   const deadline = new Date();
+deadline.setHours(
+  deadline.getHours() + slaHours(estimate.urgency)
+);
+
+const { data, error } = await supabase
+  .from("tickets")
+  .insert([
+    {
+      reporter_id: "demo-user",
+      ward_id: null,
+      title: CATEGORY_LABEL[category],
+      description: description.trim(),
+      language: "en",
+      hazard_type: category,
+      urgency_score: estimate.urgency,
+      status: "open",
+      photo_url: photo?.url ?? null,
+      sla_deadline: deadline.toISOString(),
+
+      // May fail depending on PostGIS configuration
+      location: `POINT(${pin.lng} ${pin.lat})`,
+    },
+  ])
+  .select();
+
+if (error) {
+  console.error("Supabase insert error:", error);
+  alert(error.message);
+  return;
+}
+
+const complaint = submitComplaint({
+  ...pin,
+  category,
+  description: description.trim(),
+  urgency: estimate.urgency,
+  photo: photo?.url,
+});
+
+setReceipt(complaint);
   }
 
   function reset() {
