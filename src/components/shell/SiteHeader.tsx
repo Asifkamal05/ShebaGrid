@@ -32,6 +32,12 @@ export function SiteHeader() {
                 Sign in
               </Link>
               <Link
+                href="/signup"
+                className="hidden rounded-ui border border-on-road/30 px-3 py-2 font-medium text-on-road hover:bg-on-road/10 sm:block"
+              >
+                Sign up
+              </Link>
+              <Link
                 href="/login?next=/report"
                 className="rounded-ui bg-survey px-4 py-2 font-semibold text-road hover:brightness-95"
               >
