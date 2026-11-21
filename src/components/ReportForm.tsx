@@ -41,6 +41,8 @@ export function ReportForm() {
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [locating, setLocating] = useState(false);
+  
+const [locError, setLocError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Complaint | null>(null);
 
   const points = useMemo(
@@ -66,8 +68,9 @@ export function ReportForm() {
 
   const clearError = (key: string) => setErrors((e) => (e[key] ? { ...e, [key]: "" } : e));
 
-  function placePin(point: LatLng) {
+ function placePin(point: LatLng) {
     setPin(point);
+    setLocError(null);
     clearError("pin");
   }
 
@@ -82,19 +85,30 @@ export function ReportForm() {
       setErrors((e) => ({ ...e, photo: "That file could not be read as a photo. Try a JPG or PNG." }));
     }
   }
-
-  function useMyLocation() {
-    if (!navigator.geolocation) return;
+function useMyLocation() {
+    setLocError(null);
+    if (!navigator.geolocation) {
+      setLocError("Location is not supported in this browser. Click the map or pick an area.");
+      return;
+    }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         placePin({ lat: position.coords.latitude, lng: position.coords.longitude });
         setLocating(false);
       },
-      () => setLocating(false),
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocError("Location access was blocked. Allow location in your browser settings or pick on the map.");
+        } else if (err.code === err.TIMEOUT) {
+          setLocError("Finding your location timed out. Click the map or choose an area.");
+        } else {
+          setLocError("Couldn't detect your location. Click the map or choose an area.");
+        }
+      },
       { timeout: 8000 },
-    );
-  }
+    );}
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
